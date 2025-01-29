@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Portal | Download Images with Ease</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fas fa-images"></i>
+                <span>AI Image Portal</span>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="hero-section">
+                <h1 class="title">Download AI-Generated Images</h1>
+                <p class="subtitle">Enter a prompt, choose how many images you want, and receive them directly in your inbox!</p>
+            </div>
+
+            <div class="form-container">
+                <form id="downloadForm" class="download-form">
+                    <div class="form-group">
+                        <label for="prompt">
+                            <i class="fas fa-magic"></i>
+                            Image Prompt
+                        </label>
+                        <input 
+                            type="text" 
+                            id="prompt" 
+                            name="prompt" 
+                            placeholder="Enter a detailed description of the images you want..."
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imageCount">
+                            <i class="fas fa-layer-group"></i>
+                            Number of Images
+                        </label>
+                        <div class="image-count-container">
+                            <input 
+                                type="range" 
+                                id="imageCount" 
+                                name="imageCount" 
+                                min="1" 
+                                max="20" 
+                                value="5"
+                            >
+                            <span id="imageCountDisplay">5 images</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Where should we send your images?"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Generate Images</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div id="status" class="status-container hidden">
+                <div class="status-content">
+                    <div class="loading-spinner"></div>
+                    <p class="status-message"></p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Fast Processing</h3>
+                    <p>Get your images within minutes</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Secure Delivery</h3>
+                    <p>Direct to your email inbox</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-paint-brush"></i>
+                    <h3>High Quality</h3>
+                    <p>Professional-grade images</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('downloadForm');
+            const status = document.getElementById('status');
+            const statusMessage = document.querySelector('.status-message');
+            const imageCount = document.getElementById('imageCount');
+            const imageCountDisplay = document.getElementById('imageCountDisplay');
+
+            // Update image count display
+            imageCount.addEventListener('input', function() {
+                imageCountDisplay.textContent = `${this.value} images`;
+            });
+
+            // Handle form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                try {
+                    // Show loading status
+                    status.classList.remove('hidden');
+                    status.classList.remove('error', 'success');
+                    status.classList.add('loading');
+                    statusMessage.textContent = 'Generating your images...';
+
+                    // Collect form data
+                    const formData = {
+                        prompt: document.getElementById('prompt').value,
+                        email: document.getElementById('email').value,
+                        imageCount: document.getElementById('imageCount').value
+                    };
+
+                    const response = await fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    status.classList.remove('loading');
+
+                    if (response.ok) {
+                        status.classList.add('success');
+                        statusMessage.textContent = result.message;
+                        form.reset();
+                        imageCountDisplay.textContent = '5 images';
+                    } else {
+                        throw new Error(result.message || 'An error occurred');
+                    }
+
+                } catch (error) {
+                    status.classList.remove('loading');
+                    status.classList.add('error');
+                    statusMessage.textContent = error.message;
+                }
+
+                // Hide status after 5 seconds
+                setTimeout(() => {
+                    status.classList.add('hidden');
+                    status.classList.remove('success', 'error');
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>
