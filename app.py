@@ -1,3 +1,4 @@
+from flask import Flask, request, render_template, jsonify
 import ssl
 import os
 import shutil
@@ -6,7 +7,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
-from flask import Flask, request, render_template, jsonify, current_app
 from bing_image_downloader import downloader
 from datetime import datetime
 
@@ -20,6 +20,8 @@ class Config:
     ALLOWED_FORMATS = ['jpg', 'jpeg', 'png']
     EMAIL_SENDER = "teamfooddle@gmail.com"  # Replace with your email
     EMAIL_PASSWORD = "eizy lvzb cdlk huuo"  # Replace with your App Password
+    # Define base temporary directory
+    TEMP_DIR = "/tmp/image_downloads"
 
 @app.route('/')
 def home():
@@ -39,9 +41,9 @@ def submit():
         if not prompt or not email:
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
-        # Create unique directory for this request
+        # Create unique directory for this request within /tmp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = f"images/{prompt.replace(' ', '_')}_{timestamp}"
+        output_dir = os.path.join(Config.TEMP_DIR, f"{prompt.replace(' ', '_')}_{timestamp}")
 
         # Download images
         downloader.download(
@@ -53,7 +55,7 @@ def submit():
             timeout=60
         )
 
-        # Create zip file
+        # Create zip file in /tmp
         zip_path = f"{output_dir}.zip"
         shutil.make_archive(output_dir, 'zip', output_dir)
 
@@ -112,5 +114,6 @@ def send_email(to_email, zip_file, prompt):
         server.send_message(msg)
 
 if __name__ == '__main__':
-    os.makedirs('images', exist_ok=True)
+    # Create temporary directory in /tmp instead of the application directory
+    os.makedirs(Config.TEMP_DIR, exist_ok=True)
     app.run(host='0.0.0.0', port=5000, debug=True)
